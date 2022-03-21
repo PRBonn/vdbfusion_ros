@@ -29,7 +29,7 @@ bool vdbfusion::VDBVolumeROS::saveVolume(std_srvs::Empty::Request& request,
   // Store the grid results to disks
   std::string map_name = "kitti_seq_00";
   {
-    ROS_INFO_ONCE("Writing VDB grid to disk");
+    ROS_INFO("Writing VDB grid to disk");
     auto tsdf_grid = this->tsdf_;
     std::string filename = map_name + ".vdb";
     openvdb::io::File(filename).write({tsdf_grid});
@@ -58,6 +58,7 @@ bool vdbfusion::VDBVolumeROS::saveVolume(std_srvs::Empty::Request& request,
     std::string filename = map_name + ".ply";
     igl::write_triangle_mesh(filename, V, F, igl::FileEncoding::Binary);
   }
+  ROS_INFO("Done saving the mesh and VDB grid files");
   return true;
 }
 
@@ -82,8 +83,5 @@ int main(int argc, char **argv) {
 
   ros::spin();
 
-  if (!ros::ok()){
-    std::cout << "Exiting..";
-  }
   return 0;
 }
