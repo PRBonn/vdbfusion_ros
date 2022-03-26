@@ -37,6 +37,11 @@ add_message_files(
   pointcloud_with_origin.msg
 )
 
+add_service_files(
+  FILES
+  save_volume.srv
+)
+
 generate_messages(
   DEPENDENCIES
   geometry_msgs

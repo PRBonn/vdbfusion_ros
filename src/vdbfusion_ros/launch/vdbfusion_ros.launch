@@ -1,7 +1,7 @@
 <launch>
+  <rosparam file="$(find vdbfusion_ros)/config/KITTI.yaml" />
   <node name="dataset_publisher" pkg="vdbfusion_ros" type="kitti_dataset_node" output="screen">
   </node>
-
   <node name="vdbfusion" pkg="vdbfusion_ros" type="vdbfusion_ros_node" output="screen">
   </node>
 </launch>

@@ -1,3 +1,5 @@
+#include "KITTIOdometry.hpp"
+
 #include <Eigen/Dense>
 #include <experimental/filesystem>
 #include <fstream>
@@ -6,10 +8,9 @@
 #include <string>
 #include <vector>
 
-#include "ros/ros.h"
-#include "ros/console.h"
 #include "Iterable.h"
-#include "KITTIOdometry.hpp"
+#include "ros/console.h"
+#include "ros/ros.h"
 #include "type_conversions.hpp"
 #include "vdbfusion_ros/pointcloud_with_origin.h"
 
@@ -128,25 +129,20 @@ namespace datasets {
 KITTIDataset::KITTIDataset(const std::string& kitti_root_dir,
                            const std::string& sequence,
                            int n_scans)
-    : preprocess_(true),
-      apply_pose_(true) {
+    : preprocess_(true), apply_pose_(true) {
     // TODO: to be completed
-    auto kitti_root_dir_ = fs::absolute(
-        fs::path(kitti_root_dir));
-    auto kitti_sequence_dir = fs::absolute(
-        fs::path(kitti_root_dir) / "sequences" / sequence);
+    auto kitti_root_dir_ = fs::absolute(fs::path(kitti_root_dir));
+    auto kitti_sequence_dir = fs::absolute(fs::path(kitti_root_dir) / "sequences" / sequence);
 
     // Read data, cache it inside the class.
     std::tie(time_, poses_) =
         GetGTPoses(kitti_root_dir_ / "poses" / std::string(sequence + ".txt"),
-                   kitti_sequence_dir / "calib.txt",
-                   kitti_sequence_dir / "times.txt");
-    scan_files_ = GetVelodyneFiles(
-        fs::absolute(kitti_sequence_dir / "velodyne/"), n_scans);
+                   kitti_sequence_dir / "calib.txt", kitti_sequence_dir / "times.txt");
+    scan_files_ = GetVelodyneFiles(fs::absolute(kitti_sequence_dir / "velodyne/"), n_scans);
 }
 
-std::tuple<float, std::vector<Eigen::Vector3d>, Eigen::Vector3d>
-    KITTIDataset::operator[](int idx) const {
+std::tuple<float, std::vector<Eigen::Vector3d>, Eigen::Vector3d> KITTIDataset::operator[](
+    int idx) const {
     std::vector<Eigen::Vector3d> points = ReadKITTIVelodyne(scan_files_[idx]);
     if (preprocess_) PreProcessCloud(points, 2.0, 70.0);
     if (apply_pose_) TransformPoints(points, poses_[idx]);
@@ -156,24 +152,20 @@ std::tuple<float, std::vector<Eigen::Vector3d>, Eigen::Vector3d>
 }
 }  // namespace datasets
 
-int main(int argc, char **argv){
+int main(int argc, char** argv) {
     int n_scans = -1;
-    std::string kitti_root_dir = 
-        "/home/ssg1002/Datasets/KITTI_Odometry_Velodyne";
+    std::string kitti_root_dir = "/home/ssg1002/Datasets/KITTI_Odometry_Velodyne";
     std::string sequence = "00";
 
-    const auto dataset =
-        datasets::KITTIDataset(kitti_root_dir, sequence, n_scans);
+    const auto dataset = datasets::KITTIDataset(kitti_root_dir, sequence, n_scans);
 
     ros::init(argc, argv, "kitti_odometry_data");
     ros::NodeHandle n;
 
-    ros::Publisher pub =
-        n.advertise<vdbfusion_ros::pointcloud_with_origin>("pointcloud", 1000);
+    ros::Publisher pub = n.advertise<vdbfusion_ros::pointcloud_with_origin>("pointcloud", 1000);
 
-    while(ros::ok()){
-        for (const auto& [timestamp, scan, origin] : utils::iterable(dataset))
-        {
+    while (ros::ok()) {
+        for (const auto& [timestamp, scan, origin] : utils::iterable(dataset)) {
             vdbfusion_ros::pointcloud_with_origin data;
             sensor_msgs::PointCloud pcl;
             geometry_msgs::Point pose;
@@ -186,7 +178,7 @@ int main(int argc, char **argv){
 
             pub.publish(data);
 
-            if(!ros::ok()){
+            if (!ros::ok()) {
                 break;
             }
         }
