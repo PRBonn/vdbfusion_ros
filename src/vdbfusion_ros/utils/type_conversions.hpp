@@ -1,18 +1,16 @@
 #pragma once
 
-#include <eigen3/Eigen/Core>
 #include <geometry_msgs/Point.h>
-#include <sensor_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <tf2_msgs/TFMessage.h>
 
+#include <eigen3/Eigen/Core>
 #include <vector>
 
-namespace tf {
-void pclEigenToSensorMsg(const std::vector<Eigen::Vector3d> &points,
-                         sensor_msgs::PointCloud &pcl);
-void pclSensorMsgToEigen(const sensor_msgs::PointCloud &pcl,
-                         std::vector<Eigen::Vector3d> &points);
+namespace typeconvert {
+void pcl2SensorMsgToEigen(const sensor_msgs::PointCloud2 &pcl2,
+                          std::vector<Eigen::Vector3d> &points);
 
-void originEigenToPointMsg(const Eigen::Vector3d &e, geometry_msgs::Point &m);
-void originPointMsgToEigen(const geometry_msgs::Point &m, Eigen::Vector3d &e);
+void tf2ToEigen(const tf2_msgs::TFMessage &tf, Eigen::Vector3d &e);
 
-} // namespace tf
+}  // namespace typeconvert

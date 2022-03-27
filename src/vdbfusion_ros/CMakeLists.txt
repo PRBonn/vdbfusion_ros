@@ -5,9 +5,15 @@ project(vdbfusion_ros)
 # add_compile_options(-std=c++11)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Clang Format
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+include(ClangFormat)
+
 find_package(catkin REQUIRED COMPONENTS
 roscpp
 rospy
+tf2_sensor_msgs
+tf2_ros
 std_msgs
 geometry_msgs
 sensor_msgs
@@ -51,7 +57,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/include
   LIBRARIES type_conversions
-  CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs sensor_msgs message_runtime
+  CATKIN_DEPENDS roscpp rospy tf2_ros tf2_sensor_msgs std_msgs geometry_msgs sensor_msgs message_runtime
   DEPENDS VDBFusion::vdbfusion Eigen3::Eigen
 )
 
@@ -68,7 +74,7 @@ include_directories(
 
 include(3rdparty/find_dependencies.cmake)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utils)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/datasets)
+# add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/datasets)
 
 add_executable(${PROJECT_NAME}_node src/VDBVolume_ros.cpp)
 

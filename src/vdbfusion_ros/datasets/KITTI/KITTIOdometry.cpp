@@ -162,7 +162,7 @@ int main(int argc, char** argv) {
     ros::init(argc, argv, "kitti_odometry_data");
     ros::NodeHandle n;
 
-    ros::Publisher pub = n.advertise<vdbfusion_ros::pointcloud_with_origin>("pointcloud", 1000);
+    ros::Publisher pub = n.advertise<vdbfusion_ros::pointcloud_with_origin>("/pointcloud", 1000);
 
     while (ros::ok()) {
         for (const auto& [timestamp, scan, origin] : utils::iterable(dataset)) {

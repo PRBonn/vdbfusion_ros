@@ -1,5 +1,11 @@
 #include "VDBVolume_ros.hpp"
 
+#include <geometry_msgs/TransformStamped.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/time_synchronizer.h>
+#include <ros/ros.h>
+#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
+
 #include <eigen3/Eigen/Core>
 #include <fstream>
 #include <iostream>
@@ -7,42 +13,49 @@
 
 #include "igl/write_triangle_mesh.h"
 #include "openvdb/openvdb.h"
-#include "ros/ros.h"
 #include "type_conversions.hpp"
 
-vdbfusion::VDBVolumeROS::VDBVolumeROS(float voxel_size,
-                                      float sdf_trunc,
-                                      bool space_carving /* = false*/,
-                                      bool fill_holes /* = true*/,
-                                      float min_weight /* = 5.0*/)
-    : VDBVolume(voxel_size, sdf_trunc, space_carving),
+vdbfusion::VDBVolumeNode::VDBVolumeNode(float voxel_size,
+                                        float sdf_trunc,
+                                        bool space_carving /* = false*/,
+                                        bool fill_holes /* = true*/,
+                                        float min_weight /* = 5.0*/)
+    : tf_(buffer_),
+      vdb_volume_(voxel_size, sdf_trunc, space_carving),
       fill_holes_(fill_holes),
       min_weight_(min_weight) {}
 
-void vdbfusion::VDBVolumeROS::integrate(const vdbfusion_ros::pointcloud_with_origin& pcl) {
-    std::vector<Eigen::Vector3d> points;
-    Eigen::Vector3d origin = Eigen::Vector3d(0, 0, 0);
+void vdbfusion::VDBVolumeNode::Integrate(const sensor_msgs::PointCloud2& pcl2) {
+    std::vector<Eigen::Vector3d> scan;
+    geometry_msgs::TransformStamped transform;
 
-    tf::originPointMsgToEigen(pcl.origin, origin);
-    tf::pclSensorMsgToEigen(pcl.pcl, points);
-    this->Integrate(points, origin, [](float /*unused*/) { return 1.0; });
+    // transform_
+    transform =
+        this->buffer_.lookupTransform("world", "base_link", ros::Time(0), ros::Duration(1, 0));
+    sensor_msgs::PointCloud2 pcl_transformed;
+    tf2::doTransform(pcl2, pcl_transformed, transform);
+    Eigen::Vector3d origin =
+        Eigen::Vector3d(transform.transform.translation.x, transform.transform.translation.y,
+                        transform.transform.translation.z);
+    // typeconvert::tf2ToEigen(tf, origin);
+    typeconvert::pcl2SensorMsgToEigen(pcl_transformed, scan);
+    this->vdb_volume_.Integrate(scan, origin, [](float /*unused*/) { return 1.0; });
 }
 
-bool vdbfusion::VDBVolumeROS::saveVolume(vdbfusion_ros::save_volume::Request& request, 
-      vdbfusion_ros::save_volume::Response& response) {
-    // Store the grid results to disks
-    std::string map_name = request.path;
+bool vdbfusion::VDBVolumeNode::saveVolume(vdbfusion_ros::save_volume::Request& save_path,
+                                          vdbfusion_ros::save_volume::Response& response) {
+    ROS_INFO("Saving the mesh and VDB grid files ...");
+
+    std::string volume_name = save_path.path;
     {
-        ROS_INFO("Writing VDB grid to disk");
-        auto tsdf_grid = this->tsdf_;
-        std::string filename = map_name + ".vdb";
-        openvdb::io::File(filename).write({tsdf_grid});
+        auto tsdf_grid = this->vdb_volume_.tsdf_;
+        openvdb::io::File(volume_name + "_grid.vdb").write({tsdf_grid});
     }
 
     // Run marching cubes and save a .ply file
     {
         auto [vertices, triangles] =
-            this->ExtractTriangleMesh(this->fill_holes_, this->min_weight_);
+            this->vdb_volume_.ExtractTriangleMesh(this->fill_holes_, this->min_weight_);
 
         // TODO: Fix this!
         Eigen::MatrixXd V(vertices.size(), 3);
@@ -55,8 +68,7 @@ bool vdbfusion::VDBVolumeROS::saveVolume(vdbfusion_ros::save_volume::Request& re
         for (size_t i = 0; i < triangles.size(); i++) {
             F.row(i) = Eigen::VectorXi::Map(&triangles[i][0], triangles[i].size());
         }
-        std::string filename = map_name + ".ply";
-        igl::write_triangle_mesh(filename, V, F, igl::FileEncoding::Binary);
+        igl::write_triangle_mesh(volume_name + "_mesh.ply", V, F, igl::FileEncoding::Binary);
     }
     ROS_INFO("Done saving the mesh and VDB grid files");
     return true;
@@ -65,8 +77,8 @@ bool vdbfusion::VDBVolumeROS::saveVolume(vdbfusion_ros::save_volume::Request& re
 int main(int argc, char** argv) {
     openvdb::initialize();
 
-    ros::init(argc, argv, "vdbfusion_ros");
-    ros::NodeHandle n;
+    ros::init(argc, argv, "vdbfusion_rosnode");
+    ros::NodeHandle nh;
 
     float voxel_size;
     float sdf_trunc;
@@ -74,22 +86,32 @@ int main(int argc, char** argv) {
     bool fill_holes;
     float min_weight;
 
-    n.getParam("/voxel_size", voxel_size);
-    n.getParam("/sdf_trunc", sdf_trunc);
-    n.getParam("/space_carving", space_carving);
-    n.getParam("/fill_holes", fill_holes);
-    n.getParam("/min_weight", min_weight);
+    nh.getParam("/voxel_size", voxel_size);
+    nh.getParam("/sdf_trunc", sdf_trunc);
+    nh.getParam("/space_carving", space_carving);
+    nh.getParam("/fill_holes", fill_holes);
+    nh.getParam("/min_weight", min_weight);
 
-    vdbfusion::VDBVolumeROS tsdf_volume(voxel_size, sdf_trunc, space_carving, fill_holes,
+    vdbfusion::VDBVolumeNode vdb_volume(voxel_size, sdf_trunc, space_carving, fill_holes,
                                         min_weight);
 
-    ros::Subscriber sub =
-        n.subscribe("pointcloud", 1000, &vdbfusion::VDBVolumeROS::integrate, &tsdf_volume);
+    const int queue_size = 100;
+    const std::string& pcl_topic = "/kitti/velo/pointcloud";
+    const std::string& tf_topic = "/tf/transforms";
 
+    // message_filters::Subscriber<sensor_msgs::PointCloud2> scan_sub(nh, pcl_topic, queue_size);
+    // message_filters::Subscriber<tf2_msgs::TFMessage> tf_sub(nh, tf_topic, queue_size);
+    // message_filters::TimeSynchronizer<sensor_msgs::PointCloud2, tf2_msgs::TFMessage> sync(
+    //     scan_sub, tf_sub, queue_size);
+    // sync.registerCallback(&vdbfusion::VDBVolumeNode::Integrate, &vdb_volume);
+    // ros::Subscriber sub =
+    //     nh.subscribe("/pointcloud", 1000, &vdbfusion::VDBVolumeNode::Integrate, &vdb_volume);
+
+    ros::Subscriber sub =
+        nh.subscribe(pcl_topic, queue_size, &vdbfusion::VDBVolumeNode::Integrate, &vdb_volume);
     ros::ServiceServer srv =
-        n.advertiseService("/save_volume", &vdbfusion::VDBVolumeROS::saveVolume, &tsdf_volume);
+        nh.advertiseService("/save_volume", &vdbfusion::VDBVolumeNode::saveVolume, &vdb_volume);
 
     ros::spin();
-
     return 0;
 }
