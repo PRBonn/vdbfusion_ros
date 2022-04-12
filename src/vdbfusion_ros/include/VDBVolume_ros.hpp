@@ -4,6 +4,8 @@
 #include <std_srvs/Empty.h>
 #include <tf2_ros/transform_listener.h>
 
+#include <string>
+
 #include "vdbfusion/VDBVolume.h"
 #include "vdbfusion_ros/save_volume.h"
 
@@ -29,5 +31,7 @@ private:
     VDBVolume vdb_volume_;
     bool fill_holes_;
     float min_weight_;
+    std::string parent_frame_;
+    std::string child_frame_;
 };
 }  // namespace vdbfusion

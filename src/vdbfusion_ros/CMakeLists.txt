@@ -38,21 +38,12 @@ find_package(Eigen3 REQUIRED)
 ################################################
 ## Declare ROS messages, services and actions ##
 ################################################
-add_message_files(
-  FILES
-  pointcloud_with_origin.msg
-)
-
 add_service_files(
   FILES
   save_volume.srv
 )
 
-generate_messages(
-  DEPENDENCIES
-  geometry_msgs
-  sensor_msgs
-)
+generate_messages()
 
 catkin_package(
   INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/include

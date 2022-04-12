@@ -1,8 +1,6 @@
 #include "VDBVolume_ros.hpp"
 
 #include <geometry_msgs/TransformStamped.h>
-#include <message_filters/subscriber.h>
-#include <message_filters/time_synchronizer.h>
 #include <ros/ros.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 
@@ -33,9 +31,11 @@ vdbfusion::VDBVolumeNode::VDBVolumeNode() : tf_(buffer_), vdb_volume_(InitVDBVol
     openvdb::initialize();
 
     std::string pcl_topic;
+    nh_.getParam("/pcl_topic", pcl_topic);
     nh_.getParam("/fill_holes", fill_holes_);
     nh_.getParam("/min_weight", min_weight_);
-    nh_.getParam("/pcl_topic", pcl_topic);
+    nh_.getParam("/parent_frame", parent_frame_);
+    nh_.getParam("/child_frame", child_frame_);
 
     const int queue_size = 50;
 
@@ -51,9 +51,10 @@ void vdbfusion::VDBVolumeNode::Integrate(const sensor_msgs::PointCloud2& pcl2) {
     geometry_msgs::TransformStamped transform;
 
     auto block_time = ros::Duration(0, 1e8);
-    if (buffer_.canTransform("world", "base_link", pcl2.header.stamp, block_time)) {
+    if (buffer_.canTransform(parent_frame_, child_frame_, pcl2.header.stamp, block_time)) {
         ROS_INFO("Transform available");
-        transform = buffer_.lookupTransform("world", "base_link", pcl2.header.stamp, block_time);
+        transform =
+            buffer_.lookupTransform(parent_frame_, child_frame_, pcl2.header.stamp, block_time);
         sensor_msgs::PointCloud2 pcl_transformed;
         tf2::doTransform(pcl2, pcl_transformed, transform);
         Eigen::Vector3d origin =
