@@ -7,4 +7,4 @@ pcl_topic: "/penguin/os1_cloud_node/points"
 
 # TF2
 parent_frame: "odom"
-child_frame: "os1_sensor"
+child_frame: "penguin/current_reference"

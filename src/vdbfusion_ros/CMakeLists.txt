@@ -65,7 +65,6 @@ include_directories(
 
 include(3rdparty/find_dependencies.cmake)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utils)
-# add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/datasets)
 
 add_executable(${PROJECT_NAME}_node src/VDBVolume_ros.cpp)
 
