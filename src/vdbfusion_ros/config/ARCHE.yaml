@@ -1,10 +1,10 @@
 apply_pose: True
 preprocess: True
 min_range: 2.0
-max_range: 70.0
+max_range: 20.0
 
 pcl_topic: "/penguin/os1_cloud_node/points"
 
 # TF2
 parent_frame: "odom"
-child_frame: "penguin/current_reference"
+child_frame: "os1_sensor"

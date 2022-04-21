@@ -37,7 +37,7 @@ vdbfusion::VDBVolumeNode::VDBVolumeNode() : tf_(buffer_), vdb_volume_(InitVDBVol
     nh_.getParam("/parent_frame", parent_frame_);
     nh_.getParam("/child_frame", child_frame_);
 
-    const int queue_size = 50;
+    const int queue_size = 100;
 
     sub_ = nh_.subscribe(pcl_topic, queue_size, &vdbfusion::VDBVolumeNode::Integrate, this);
     srv_ = nh_.advertiseService("/save_volume", &vdbfusion::VDBVolumeNode::saveVolume, this);

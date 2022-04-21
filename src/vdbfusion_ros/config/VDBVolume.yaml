@@ -1,5 +1,5 @@
 # VDBFUSION
-voxel_size: 0.05
+voxel_size: 0.1
 sdf_trunc: 0.1
 space_carving: False
 
