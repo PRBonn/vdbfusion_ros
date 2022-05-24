@@ -1,8 +1,0 @@
-# VDBFUSION
-voxel_size: 0.1
-sdf_trunc: 0.1
-space_carving: False
-
-# Reconstruction
-fill_holes: True
-min_weight: 5.0

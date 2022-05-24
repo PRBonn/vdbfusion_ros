@@ -8,9 +8,9 @@ void pcl2SensorMsgToEigen(const sensor_msgs::PointCloud2 &pcl2,
                           std::vector<Eigen::Vector3d> &points) {
     sensor_msgs::PointCloud pcl;
     sensor_msgs::convertPointCloud2ToPointCloud(pcl2, pcl);
-    for (int i = 0; i < pcl.points.size(); i++) {
-        points.emplace_back(Eigen::Vector3d(pcl.points[i].x, pcl.points[i].y, pcl.points[i].z));
-    }
+    std::for_each(pcl.points.begin(), pcl.points.end(), [&](const auto &point) {
+        points.emplace_back(Eigen::Vector3d(point.x, point.y, point.z));
+    });
 }
 
 void tf2ToEigen(const tf2_msgs::TFMessage &tf, Eigen::Vector3d &e) {

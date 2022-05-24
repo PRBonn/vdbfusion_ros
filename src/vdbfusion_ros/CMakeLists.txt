@@ -66,6 +66,7 @@ include_directories(
 include(3rdparty/find_dependencies.cmake)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utils)
 
+add_library(transforms STATIC src/Transform.cpp)
 add_executable(${PROJECT_NAME}_node src/VDBVolume_ros.cpp)
 
 target_link_libraries(${PROJECT_NAME}_node PUBLIC
@@ -74,6 +75,7 @@ target_link_libraries(${PROJECT_NAME}_node PUBLIC
   VDBFusion::vdbfusion
   Eigen3::Eigen
   igl::core
+  transforms
 )
 
 target_include_directories(${PROJECT_NAME}_node PUBLIC

@@ -1,11 +1,15 @@
 #pragma once
 
+#include <geometry_msgs/TransformStamped.h>
+#include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <std_srvs/Empty.h>
 #include <tf2_ros/transform_listener.h>
 
+#include <Eigen/Core>
 #include <string>
 
+#include "Transform.hpp"
 #include "vdbfusion/VDBVolume.h"
 #include "vdbfusion_ros/save_volume.h"
 
@@ -24,14 +28,17 @@ private:
     ros::NodeHandle nh_;
     ros::Subscriber sub_;
     ros::ServiceServer srv_;
-    tf2_ros::Buffer buffer_;
-    tf2_ros::TransformListener tf_;
+    Transform tf_;
 
 private:
     VDBVolume vdb_volume_;
+
+    bool preprocess_;
+    bool apply_pose_;
+    float min_range_;
+    float max_range_;
+
     bool fill_holes_;
     float min_weight_;
-    std::string parent_frame_;
-    std::string child_frame_;
 };
 }  // namespace vdbfusion

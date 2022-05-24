@@ -6,5 +6,6 @@ max_range: 70.0
 pcl_topic: "/kitti/velo/pointcloud"
 
 # TF2
+use_tf_transforms: true
 parent_frame: "world"
 child_frame: "base_link"

@@ -1,3 +1,12 @@
+# VDBFUSION
+voxel_size: 0.01
+sdf_trunc: 0.06
+space_carving: False
+
+# Reconstruction
+fill_holes: True
+min_weight: 5.0
+
 apply_pose: True
 preprocess: True
 min_range: 1.0
@@ -6,5 +15,6 @@ max_range: 10.0
 pcl_topic: "/camera/rgb/points"
 
 # TF2
+use_tf_transforms: true
 parent_frame: "world"
 child_frame: "openni_rgb_optical_frame"

@@ -1,0 +1,20 @@
+# VDBFUSION
+voxel_size: 0.01
+sdf_trunc: 0.06
+space_carving: False
+
+# Reconstruction
+fill_holes: True
+min_weight: 5.0
+
+# Dataset
+apply_pose: True
+preprocess: True
+min_range: 0.1
+max_range: 5.0
+
+pcl_topic: "/camera/depth_registered/points"
+
+# TF2
+use_tf_transforms: False
+tf_topic: "/kinect/vrpn_client/estimated_transform"

@@ -12,6 +12,7 @@
 #include "igl/write_triangle_mesh.h"
 #include "openvdb/openvdb.h"
 #include "type_conversions.hpp"
+#include "utils.h"
 
 vdbfusion::VDBVolume vdbfusion::VDBVolumeNode::InitVDBVolume() {
     float voxel_size;
@@ -27,17 +28,19 @@ vdbfusion::VDBVolume vdbfusion::VDBVolumeNode::InitVDBVolume() {
     return vdb_volume;
 }
 
-vdbfusion::VDBVolumeNode::VDBVolumeNode() : tf_(buffer_), vdb_volume_(InitVDBVolume()) {
+vdbfusion::VDBVolumeNode::VDBVolumeNode() : vdb_volume_(InitVDBVolume()), tf_(nh_) {
     openvdb::initialize();
 
     std::string pcl_topic;
     nh_.getParam("/pcl_topic", pcl_topic);
+    nh_.getParam("/preprocess", preprocess_);
+    nh_.getParam("/apply_pose", apply_pose_);
+    nh_.getParam("/min_range", min_range_);
+    nh_.getParam("/max_range", max_range_);
     nh_.getParam("/fill_holes", fill_holes_);
     nh_.getParam("/min_weight", min_weight_);
-    nh_.getParam("/parent_frame", parent_frame_);
-    nh_.getParam("/child_frame", child_frame_);
 
-    const int queue_size = 100;
+    const int queue_size = 500;
 
     sub_ = nh_.subscribe(pcl_topic, queue_size, &vdbfusion::VDBVolumeNode::Integrate, this);
     srv_ = nh_.advertiseService("/save_volume", &vdbfusion::VDBVolumeNode::saveVolume, this);
@@ -50,18 +53,23 @@ void vdbfusion::VDBVolumeNode::Integrate(const sensor_msgs::PointCloud2& pcl2) {
     std::vector<Eigen::Vector3d> scan;
     geometry_msgs::TransformStamped transform;
 
-    auto block_time = ros::Duration(0, 1e8);
-    if (buffer_.canTransform(parent_frame_, child_frame_, pcl2.header.stamp, block_time)) {
-        ROS_INFO("Transform available");
-        transform =
-            buffer_.lookupTransform(parent_frame_, child_frame_, pcl2.header.stamp, block_time);
-        sensor_msgs::PointCloud2 pcl_transformed;
-        tf2::doTransform(pcl2, pcl_transformed, transform);
+    auto block_time = ros::Duration(0, 1e3);
+    if (tf_.lookUpTransform(pcl2.header.stamp, block_time, transform)) {
         Eigen::Vector3d origin =
             Eigen::Vector3d(transform.transform.translation.x, transform.transform.translation.y,
                             transform.transform.translation.z);
+        if (apply_pose_) {
+            sensor_msgs::PointCloud2 pcl2_transformed;
+            tf2::doTransform(pcl2, pcl2_transformed, transform);
 
-        typeconvert::pcl2SensorMsgToEigen(pcl_transformed, scan);
+            typeconvert::pcl2SensorMsgToEigen(pcl2_transformed, scan);
+        } else {
+            typeconvert::pcl2SensorMsgToEigen(pcl2, scan);
+        }
+
+        if (preprocess_) {
+            PreProcessCloud(scan, min_range_, max_range_);
+        }
         vdb_volume_.Integrate(scan, origin, [](float /*unused*/) { return 1.0; });
     }
 }
