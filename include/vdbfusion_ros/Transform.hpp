@@ -4,7 +4,7 @@
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 
 #include <deque>
-#include <eigen3/Eigen/Core>
+#include <Eigen/Core>
 
 namespace vdbfusion {
 class Transform {

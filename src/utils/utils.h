@@ -1,7 +1,7 @@
 #include <geometry_msgs/Transform.h>
 #include <tf/transform_listener.h>
 
-#include <eigen3/Eigen/Core>
+#include <Eigen/Core>
 
 void PreProcessCloud(std::vector<Eigen::Vector3d>& points, float min_range, float max_range) {
     points.erase(

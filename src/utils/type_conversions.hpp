@@ -4,7 +4,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <tf2_msgs/TFMessage.h>
 
-#include <eigen3/Eigen/Core>
+#include <Eigen/Core>
 #include <vector>
 
 namespace typeconvert {
