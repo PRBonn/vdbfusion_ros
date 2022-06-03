@@ -1,0 +1,7 @@
+version: "3.0"
+services:
+  ros:
+    image: vdbfusion/ros:latest
+    user: 1000:1000
+    volumes:
+      - ..:/home/user/ros_ws/
