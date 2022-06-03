@@ -19,21 +19,17 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 RUN apt-get update && apt-get install --no-install-recommends -y \
     libblosc-dev \
     libboost-iostreams-dev \
-    libboost-numpy-dev \
-    libboost-python-dev \
     libboost-system-dev \
-    libeigen3-dev \
-    libopenvdb-dev \
-    libtbb-dev \
     && rm -rf /var/lib/apt/lists/*
 
 RUN git clone --depth 1 https://github.com/PRBonn/vdbfusion.git \
     && cd vdbfusion \
     && mkdir build && cd build \
     && cmake .. \
-    && make -j$(nproc) all install \
-    && cd / \
-    && rm -rf /vdbfusion
+    # && make -j$(nproc) all install \
+    && make -j$(nproc) all
+    # && cd / \
+    # && rm -rf /vdbfusion
 
 # Add user to sahre files and folder without root permissions
 ENV GROUP_ID=1000
