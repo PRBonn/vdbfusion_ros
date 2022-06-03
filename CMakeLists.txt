@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(vdbfusion_ros)
 
+# System dependencies are found with CMake's conventions
+include(GNUInstallDirs)
+list(APPEND CMAKE_MODULE_PATH "/usr/local/lib/cmake/OpenVDB")
+find_package(OpenVDB REQUIRED)
+find_package(VDBFusion REQUIRED)
+find_package(yaml-cpp REQUIRED) # TODO: Move to 3rdparty dependencies
+find_package(Eigen3 REQUIRED) # TODO: Move to 3rdparty dependencies
+
 find_package(
   catkin REQUIRED
   COMPONENTS roscpp
@@ -11,15 +19,6 @@ find_package(
              geometry_msgs
              sensor_msgs
              message_generation)
-
-# System dependencies are found with CMake's conventions
-include(GNUInstallDirs)
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_INSTALL_FULL_LIBDIR}/cmake/OpenVDB")
-find_package(OpenVDB REQUIRED)
-find_package(VDBFusion REQUIRED)
-
-find_package(yaml-cpp REQUIRED) #TODO: Move to 3rdparty dependencies
-find_package(Eigen3 REQUIRED) #TODO: Move to 3rdparty dependencies
 
 add_service_files(FILES save_volume.srv)
 
