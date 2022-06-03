@@ -1,5 +1,6 @@
 <launch>
+  <arg name="rosbag_path"/>
   <rosparam file="$(find vdbfusion_ros)/config/CowAndLady.yaml" />
   <node name="vdbfusion" pkg="vdbfusion_ros" type="vdbfusion_ros_node" output="screen"/>
-  <node name="KITTI" pkg="rosbag" type="play" output="screen" args="--clock /home/ssg1002/Datasets/CowAndLady/data.bag"/>
+  <node name="KITTI" pkg="rosbag" type="play" output="screen" args="--clock $(arg rosbag_path)"/>
 </launch>
