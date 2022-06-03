@@ -5,10 +5,6 @@ project(vdbfusion_ros)
 # add_compile_options(-std=c++11)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Clang Format
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-include(ClangFormat)
-
 find_package(catkin REQUIRED COMPONENTS
 roscpp
 rospy
