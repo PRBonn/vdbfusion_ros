@@ -1,4 +1,4 @@
-.PHONY: build clean run
+.PHONY: build clean run docker
 
 build:
 	@docker-compose run ros catkin init 
@@ -9,3 +9,7 @@ clean:
 
 run:
 	@docker-compose run ros
+
+docker:
+	@docker-compose build ros
+
