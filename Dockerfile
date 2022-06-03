@@ -15,6 +15,15 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     ros-${ROS_DISTRO}-tf2-sensor-msgs \
     && rm -rf /var/lib/apt/lists/*
 
+# Install VDBFusion from source
+RUN git clone --depth 1 https://github.com/PRBonn/vdbfusion.git \
+    && cd vdbfusion \
+    && mkdir build && cd build \
+    && cmake .. \
+    && make -j$(nproc) all install \
+    && cd / \
+    && rm -rf /vdbfusion
+
 # Add user to sahre files and folder without root permissions
 ENV GROUP_ID=1000
 ENV USER_ID=1000
