@@ -10,6 +10,11 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 # Install Python3 utils
 RUN python3 -m pip install --no-cache  catkin-tools
 
+# Install extra ROS dependencies
+RUN apt-get update && apt-get install --no-install-recommends -y \
+    ros-${ROS_DISTRO}-tf2-sensor-msgs \
+    && rm -rf /var/lib/apt/lists/*
+
 # Add user to sahre files and folder without root permissions
 ENV GROUP_ID=1000
 ENV USER_ID=1000
