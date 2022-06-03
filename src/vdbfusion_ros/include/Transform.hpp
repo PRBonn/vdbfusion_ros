@@ -6,13 +6,14 @@
 #include <deque>
 #include <eigen3/Eigen/Core>
 
-template <typename Type>
-using AlignedDeque = std::deque<Type, Eigen::aligned_allocator<Type>>;
-
 namespace vdbfusion {
 class Transform {
+private:
+    template <typename Type>
+    using AlignedDeque = std::deque<Type, Eigen::aligned_allocator<Type>>;
+
 public:
-    explicit Transform(ros::NodeHandle nh);
+    explicit Transform(ros::NodeHandle& nh);
 
     bool lookUpTransform(const ros::Time& timestamp,
                          const ros::Duration& duration,

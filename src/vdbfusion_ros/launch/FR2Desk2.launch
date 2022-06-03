@@ -1,5 +1,5 @@
 <launch>
   <rosparam file="$(find vdbfusion_ros)/config/FR2Desk2.yaml" />
   <node name="vdbfusion" pkg="vdbfusion_ros" type="vdbfusion_ros_node" output="screen"/>
-  <node name="FR2Desk2" pkg="rosbag" type="play" output="screen" args="--clock /home/ssg1002/Datasets/rgbd_dataset_freiburg2_desk-2hz-with-pointclouds.bag"/>
+  <node name="FR2Desk2" pkg="rosbag" type="play" output="screen" args="--clock /home/ssg1002/Datasets/rgbd_dataset_freiburg2_desk2/data.bag"/>
 </launch>

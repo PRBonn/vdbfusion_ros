@@ -3,7 +3,7 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <ros/ros.h>
 
-vdbfusion::Transform::Transform(ros::NodeHandle nh) : buffer_(ros::Duration(50, 0)), tf_(buffer_) {
+vdbfusion::Transform::Transform(ros::NodeHandle& nh) : buffer_(ros::Duration(50, 0)), tf_(buffer_) {
     ROS_INFO("Transform init");
     nh.getParam("/use_tf_transforms", use_tf2_);
     if (use_tf2_) {
@@ -52,27 +52,19 @@ bool vdbfusion::Transform::lookUpTransformQ(const ros::Time& timestamp,
         return false;
     }
     const auto timestamp_tolerance_ns_ = 1e3;
-    bool match_found = false;
-    std::deque<geometry_msgs::TransformStamped>::iterator it = tf_queue_.begin();
-    for (; it != tf_queue_.end(); ++it) {
-        if (it->header.stamp > timestamp) {
-            if ((it->header.stamp - timestamp).toNSec() < timestamp_tolerance_ns_) {
-                match_found = true;
+    for (const auto& elem : tf_queue_) {
+        if (elem.header.stamp > timestamp) {
+            if ((elem.header.stamp - timestamp).toNSec() < timestamp_tolerance_ns_) {
+                transform = elem;
+                return true;
             }
             break;
         }
 
-        if ((timestamp - it->header.stamp).toNSec() < timestamp_tolerance_ns_) {
-            match_found = true;
-            break;
+        if ((timestamp - elem.header.stamp).toNSec() < timestamp_tolerance_ns_) {
+            transform = elem;
+            return true;
         }
     }
-
-    if (match_found) {
-        ROS_INFO("Transform available");
-        transform = *it;
-        return true;
-    } else {
-        return false;
-    }
+    return false;
 }
