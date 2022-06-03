@@ -2,13 +2,12 @@
 <package format="2">
   <name>vdbfusion_ros</name>
   <version>0.0.0</version>
-  <description>The vdbfusion_ros package</description>
+  <description>ROS wrappper for the vdbfusion library</description>
 
   <maintainer email="saurabh.gupta1002@gmail.com">Saurabh Gupta</maintainer>
+  <author email="saurabh.gupta1002@gmail.com">Saurabh Gupta</author>
 
   <license>MIT</license>
-
-  <author email="saurabh.gupta1002@gmail.com">Saurabh Gupta</author>
 
   <build_depend>message_generation</build_depend>
   <exec_depend>message_runtime</exec_depend>

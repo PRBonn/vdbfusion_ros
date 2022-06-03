@@ -33,7 +33,7 @@ RUN git clone --depth 1 https://github.com/nachovizzo/openvdb.git -b nacho/vdbfu
     && cd / \
     && rm -rf /openvdb
 
-# Install VDBFusion from souyrce
+# Install VDBFusion from source
 RUN git clone --depth 1 https://github.com/PRBonn/vdbfusion.git \
     && cd vdbfusion \
     && mkdir build && cd build \
@@ -42,10 +42,10 @@ RUN git clone --depth 1 https://github.com/PRBonn/vdbfusion.git \
     && cd / \
     && rm -rf /vdbfusion
 
-# Add user to sahre files and folder without root permissions
+# Add user to share files and folder without root permissions
 ENV GROUP_ID=1000
 ENV USER_ID=1000
-RUN addgroup --gid $GROUP_ID user && adduser --disabled-password --gecos '' --uid $USER_ID --gid $GROUP_ID ipb_car
+RUN addgroup --gid $GROUP_ID user && adduser --disabled-password --gecos '' --uid $USER_ID --gid $GROUP_ID user
 USER user
 
 # Build ROS workspace, bash needs the "-l" to load the /etc/profile
