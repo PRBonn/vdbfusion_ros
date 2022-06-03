@@ -15,21 +15,32 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     ros-${ROS_DISTRO}-tf2-sensor-msgs \
     && rm -rf /var/lib/apt/lists/*
 
-# Install VDBFusion from source
+# Install OpenVDB dependencies
 RUN apt-get update && apt-get install --no-install-recommends -y \
     libblosc-dev \
     libboost-iostreams-dev \
     libboost-system-dev \
+    libboost-system-dev \
+    libeigen3-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Install OpenVDB from source
+RUN git clone --depth 1 https://github.com/nachovizzo/openvdb.git -b nacho/vdbfusion \
+    && cd openvdb \
+    && mkdir build && cd build \
+    && cmake  -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DUSE_ZLIB=OFF .. \
+    && make -j$(nproc) all install \
+    && cd / \
+    && rm -rf /openvdb
+
+# Install VDBFusion from souyrce
 RUN git clone --depth 1 https://github.com/PRBonn/vdbfusion.git \
     && cd vdbfusion \
     && mkdir build && cd build \
     && cmake .. \
-    # && make -j$(nproc) all install \
-    && make -j$(nproc) all
-    # && cd / \
-    # && rm -rf /vdbfusion
+    && make -j$(nproc) all install \
+    && cd / \
+    && rm -rf /vdbfusion
 
 # Add user to sahre files and folder without root permissions
 ENV GROUP_ID=1000
