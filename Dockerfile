@@ -16,6 +16,17 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install VDBFusion from source
+RUN apt-get update && apt-get install --no-install-recommends -y \
+    libblosc-dev \
+    libboost-iostreams-dev \
+    libboost-numpy-dev \
+    libboost-python-dev \
+    libboost-system-dev \
+    libeigen3-dev \
+    libopenvdb-dev \
+    libtbb-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN git clone --depth 1 https://github.com/PRBonn/vdbfusion.git \
     && cd vdbfusion \
     && mkdir build && cd build \
