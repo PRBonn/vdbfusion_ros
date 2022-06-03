@@ -33,4 +33,5 @@
 
 # ROS
 .catkin_workspace
+.catkin_tools/
 devel/
