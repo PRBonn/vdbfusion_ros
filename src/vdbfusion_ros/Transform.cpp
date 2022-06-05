@@ -2,6 +2,9 @@
 
 #include <geometry_msgs/TransformStamped.h>
 #include <ros/ros.h>
+#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
+
+using geometry_msgs::TransformStamped;
 
 vdbfusion::Transform::Transform(ros::NodeHandle& nh) : buffer_(ros::Duration(50, 0)), tf_(buffer_) {
     ROS_INFO("Transform init");
@@ -17,52 +20,52 @@ vdbfusion::Transform::Transform(ros::NodeHandle& nh) : buffer_(ros::Duration(50,
     }
 }
 
-void vdbfusion::Transform::tfCallback(const geometry_msgs::TransformStamped& transform_msg) {
+void vdbfusion::Transform::tfCallback(const TransformStamped& transform_msg) {
     tf_queue_.push_back(transform_msg);
 }
 
 bool vdbfusion::Transform::lookUpTransform(const ros::Time& timestamp,
-                                           const ros::Duration& duration,
-                                           geometry_msgs::TransformStamped& transform) {
+                                           const ros::Duration& tolerance,
+                                           TransformStamped& transform) {
     if (use_tf2_) {
-        return lookUpTransformTF2(parent_frame_, child_frame_, timestamp, duration, transform);
+        return lookUpTransformTF2(parent_frame_, child_frame_, timestamp, tolerance, transform);
     } else {
-        return lookUpTransformQ(timestamp, transform);
+        return lookUpTransformQ(timestamp, tolerance, transform);
     }
 }
 
 bool vdbfusion::Transform::lookUpTransformTF2(const std::string& parent_frame,
                                               const std::string& child_frame,
                                               const ros::Time& timestamp,
-                                              const ros::Duration& duration,
-                                              geometry_msgs::TransformStamped& transform) {
-    bool can_transform = buffer_.canTransform(parent_frame_, child_frame_, timestamp, duration);
-    if (can_transform) {
-        ROS_INFO("Transform available");
-        transform = buffer_.lookupTransform(parent_frame_, child_frame_, timestamp, duration);
+                                              const ros::Duration& tolerance,
+                                              TransformStamped& transform) {
+    if (buffer_.canTransform(parent_frame_, child_frame_, timestamp, tolerance)) {
+        transform = buffer_.lookupTransform(parent_frame_, child_frame_, timestamp, tolerance);
+        return true;
     }
-    return can_transform;
+    return false;
 }
 
 bool vdbfusion::Transform::lookUpTransformQ(const ros::Time& timestamp,
-                                            geometry_msgs::TransformStamped& transform) {
+                                            const ros::Duration& tolerance,
+                                            TransformStamped& transform) {
     if (tf_queue_.empty()) {
         ROS_WARN_STREAM_THROTTLE(30, "No match found for transform timestamp: "
                                          << timestamp << " as transform queue is empty.");
         return false;
     }
-    const auto timestamp_tolerance_ns_ = 1e3;
-    for (const auto& elem : tf_queue_) {
-        if (elem.header.stamp > timestamp) {
-            if ((elem.header.stamp - timestamp).toNSec() < timestamp_tolerance_ns_) {
-                transform = elem;
+
+    for (const auto& tf : tf_queue_) {
+        if (tf.header.stamp > timestamp) {
+            if ((tf.header.stamp - timestamp).toNSec() < tolerance.toNSec()) {
+                transform = tf;
                 return true;
             }
             break;
         }
 
-        if ((timestamp - elem.header.stamp).toNSec() < timestamp_tolerance_ns_) {
-            transform = elem;
+        if ((timestamp - tf.header.stamp).toNSec() < tolerance.toNSec()) {
+            transform = tf;
             return true;
         }
     }

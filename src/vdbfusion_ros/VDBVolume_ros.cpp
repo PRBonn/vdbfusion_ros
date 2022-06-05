@@ -5,13 +5,12 @@
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 
 #include <Eigen/Core>
-#include <fstream>
 #include <iostream>
 #include <vector>
 
 #include "igl/write_triangle_mesh.h"
 #include "openvdb/openvdb.h"
-#include "type_conversions.hpp"
+#include "type_conversions.h"
 #include "utils.h"
 
 vdbfusion::VDBVolume vdbfusion::VDBVolumeNode::InitVDBVolume() {
@@ -37,34 +36,38 @@ vdbfusion::VDBVolumeNode::VDBVolumeNode() : vdb_volume_(InitVDBVolume()), tf_(nh
     nh_.getParam("/apply_pose", apply_pose_);
     nh_.getParam("/min_range", min_range_);
     nh_.getParam("/max_range", max_range_);
+
     nh_.getParam("/fill_holes", fill_holes_);
     nh_.getParam("/min_weight", min_weight_);
+
+    int32_t tol;
+    nh_.getParam("/timestamp_tolerance_ns", tol);
+    timestamp_tolerance_ = ros::Duration(0, tol);
 
     const int queue_size = 500;
 
     sub_ = nh_.subscribe(pcl_topic, queue_size, &vdbfusion::VDBVolumeNode::Integrate, this);
-    srv_ = nh_.advertiseService("/save_volume", &vdbfusion::VDBVolumeNode::saveVolume, this);
+    srv_ = nh_.advertiseService("/save_vdb_volume", &vdbfusion::VDBVolumeNode::saveVDBVolume, this);
 
-    ROS_INFO("Initialized VDBVolumeNode");
-    ROS_INFO("Use '/save_volume' ros service to save the integrated volume");
+    ROS_INFO("Use '/save_vdb_volume' service to save the integrated volume");
 }
 
-void vdbfusion::VDBVolumeNode::Integrate(const sensor_msgs::PointCloud2& pcl2) {
+void vdbfusion::VDBVolumeNode::Integrate(const sensor_msgs::PointCloud2& pcd) {
     std::vector<Eigen::Vector3d> scan;
     geometry_msgs::TransformStamped transform;
 
-    auto block_time = ros::Duration(0, 1e3);
-    if (tf_.lookUpTransform(pcl2.header.stamp, block_time, transform)) {
+    if (tf_.lookUpTransform(pcd.header.stamp, timestamp_tolerance_, transform)) {
+        ROS_INFO("Transform available");
         Eigen::Vector3d origin =
             Eigen::Vector3d(transform.transform.translation.x, transform.transform.translation.y,
                             transform.transform.translation.z);
         if (apply_pose_) {
-            sensor_msgs::PointCloud2 pcl2_transformed;
-            tf2::doTransform(pcl2, pcl2_transformed, transform);
+            sensor_msgs::PointCloud2 pcd_transformed;
+            tf2::doTransform(pcd, pcd_transformed, transform);
 
-            typeconvert::pcl2SensorMsgToEigen(pcl2_transformed, scan);
+            typeconvert::pcl2SensorMsgToEigen(pcd_transformed, scan);
         } else {
-            typeconvert::pcl2SensorMsgToEigen(pcl2, scan);
+            typeconvert::pcl2SensorMsgToEigen(pcd, scan);
         }
 
         if (preprocess_) {
@@ -74,11 +77,11 @@ void vdbfusion::VDBVolumeNode::Integrate(const sensor_msgs::PointCloud2& pcl2) {
     }
 }
 
-bool vdbfusion::VDBVolumeNode::saveVolume(vdbfusion_ros::save_volume::Request& save_path,
-                                          vdbfusion_ros::save_volume::Response& response) {
+bool vdbfusion::VDBVolumeNode::saveVDBVolume(vdbfusion_ros::save_vdb_volume::Request& path,
+                                             vdbfusion_ros::save_vdb_volume::Response& response) {
     ROS_INFO("Saving the mesh and VDB grid files ...");
 
-    std::string volume_name = save_path.path;
+    std::string volume_name = path.path;
 
     openvdb::io::File(volume_name + "_grid.vdb").write({vdb_volume_.tsdf_});
 
@@ -92,7 +95,6 @@ bool vdbfusion::VDBVolumeNode::saveVolume(vdbfusion_ros::save_volume::Request& s
             V.row(i) = Eigen::VectorXd::Map(&vertices[i][0], vertices[i].size());
         }
 
-        // TODO: Also this
         Eigen::MatrixXi F(triangles.size(), 3);
         for (size_t i = 0; i < triangles.size(); i++) {
             F.row(i) = Eigen::VectorXi::Map(&triangles[i][0], triangles[i].size());

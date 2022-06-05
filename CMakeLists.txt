@@ -14,7 +14,7 @@ find_package(
     std_msgs geometry_msgs sensor_msgs
     message_generation)
 
-add_service_files(FILES save_volume.srv)
+add_service_files(FILES save_vdb_volume.srv)
 
 generate_messages()
 

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <geometry_msgs/Transform.h>
 #include <tf/transform_listener.h>
 
