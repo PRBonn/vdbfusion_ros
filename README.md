@@ -36,6 +36,8 @@ A ROS C++ wrapper to the [vdbfusion](https://github.com/PRBonn/vdbfusion) librar
     mkdir -p vdbfusion_ros_ws/src
     cd vdbfusion_ros_ws/
     catkin init
+    echo "source devel/setup.bash" >> ~/.bashrc
+    source ~/.bashrc
     cd ../
     ```
 
@@ -49,12 +51,39 @@ A ROS C++ wrapper to the [vdbfusion](https://github.com/PRBonn/vdbfusion) librar
     ```
 
 ## Usage
-1. Create a config file compatible with your dataset and desired tsdf integration parameters using this [template configuration](/config/template.yaml)
+#### Configuration
+  1. Create a config file compatible with your dataset and desired tsdf integration parameters using this [template configuration](/config/template.yaml)
+  2. The PointClouds should be a `sensor_msgs/PointCloud2` message published on a custom topic name which needs to be specified in the config file
+  3. The Transforms should be either a `tf2_msgs/TFMessage` or a `geometry_msgs/TransformStamped`. See the [template configuration](config/template.yaml) for more details
+  4. The data can be published either through a rosbag file or directly from another ros node
+
+#### Launch
+```sh
+roslaunch vdbfusion_ros vdbfusion.launch config_file_name:=<insert config file name here> path_to_rosbag_file:=<insert path to rosbag file here>
+```
+
+#### Save the VDB Grid and Extract Triangle Mesh
+```sh
+rosservice call /save_vdb_volume "path: '<insert filename and path to save the volume and mesh>'"    
+```
 
 ## Dataset Examples
+Download the dataset rosbag files from the respective links
+### [TU Munich RGB-D SLAM Dataset and Benchmark - FR1DESK2](https://vision.in.tum.de/data/datasets/rgbd-dataset)
+- Use the sample [config file](config/FR2Desk2.yaml) provided for this dataset
+
+### [ETH Zurich ASL: Cow and Lady RGBD Dataset](https://projects.asl.ethz.ch/datasets/doku.php?id=iros2017)
+- Use the sample [config file](config/CowAndLady.yaml) provided for this dataset
+
+### [KITTI Dataset](http://www.cvlibs.net/datasets/kitti/raw_data.php)
+- Convert the dataset into a rosbag file using [kitti2bag](https://github.com/tomas789/kitti2bag)
+- Use the sample [config file](config/KITTI.yaml) provided for this dataset 
+
+Run the [launch](README.md#launch) command providing config file and rosbag path corresponding to the dataset
+Use the [rosservice](README.md#save-the-vdb-grid-and-extract-triangle-mesh) to save the VDB volume and mesh
+
 
 ## Citation
-
 If you use this library for any academic work, please cite the original [paper](https://www.ipb.uni-bonn.de/wp-content/papercite-data/pdf/vizzo2022sensors.pdf).
 
 ```bibtex

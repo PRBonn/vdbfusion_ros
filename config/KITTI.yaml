@@ -3,15 +3,15 @@ voxel_size: 0.05
 sdf_trunc: 0.1
 space_carving: False
 
-# Reconstruction
+# Triangle Mesh Generation
 fill_holes: True
 min_weight: 3.0
 
+# PointCloud
 apply_pose: True
 preprocess: True
 min_range: 1.0
 max_range: 75.0
-
 pcl_topic: "/kitti/velo/pointcloud"
 
 # TF

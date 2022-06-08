@@ -3,18 +3,18 @@ voxel_size: 0.01
 sdf_trunc: 0.07
 space_carving: True
 
-# Reconstruction
+# Triangle Mesh Generation
 fill_holes: True
 min_weight: 3.0
 
+# PointCloud
 apply_pose: True
 preprocess: True
 min_range: 1.0
 max_range: 10.0
-
 pcl_topic: "/camera/rgb/points"
 
-# TF
+# Transform
 use_tf_transforms: true
 parent_frame: "world"
 child_frame: "openni_rgb_optical_frame"

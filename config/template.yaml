@@ -1,21 +1,27 @@
 # VDBFUSION
-voxel_size:     # (float)
-sdf_trunc:      # (float)
-space_carving:  # (bool)
+voxel_size: # (float)
+sdf_trunc: # (float)
+space_carving: # (bool)
 
-# Reconstruction
-fill_holes:     # (bool)
-min_weight:     # (float)
+# Triangle Mesh Generation
+fill_holes: # (bool)
+min_weight: # (float)
 
 # PointCloud
-apply_pose:     # (bool)
-preprocess:     # (bool)
-min_range:      # (float)
-max_range:      # (float)
-pcl_topic:      # (string)
+apply_pose: # (bool)
+preprocess: # (bool)
+min_range: # (float)
+max_range: # (float)
+pcl_topic: # (string)
 
-# Transforms
-use_tf_transforms:  # (bool)
-parent_frame:       # (string)
-child_frame:        # (string)
-timestamp_tolerance_ns:   # (int)
+# Transform
+timestamp_tolerance_ns: # (int)
+
+# if using tf2 transforms on /tf topic
+use_tf_transforms: true
+parent_frame: # (string)
+child_frame: # (string)
+
+# if using TransformStamped msg on custom topic
+use_tf_transforms: false
+tf_topic: # (string)
