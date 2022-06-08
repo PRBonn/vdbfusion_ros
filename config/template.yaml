@@ -1,0 +1,21 @@
+# VDBFUSION
+voxel_size:     # (float)
+sdf_trunc:      # (float)
+space_carving:  # (bool)
+
+# Reconstruction
+fill_holes:     # (bool)
+min_weight:     # (float)
+
+# PointCloud
+apply_pose:     # (bool)
+preprocess:     # (bool)
+min_range:      # (float)
+max_range:      # (float)
+pcl_topic:      # (string)
+
+# Transforms
+use_tf_transforms:  # (bool)
+parent_frame:       # (string)
+child_frame:        # (string)
+timestamp_tolerance_ns:   # (int)
