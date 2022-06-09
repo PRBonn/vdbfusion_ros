@@ -3,66 +3,76 @@
 A ROS C++ wrapper to the [vdbfusion](https://github.com/PRBonn/vdbfusion) library for flexible and efficient TSDF Integration
 
 ## Installation
-- OpenVDB
-    ```sh
-    # Install OpenVDB dependencies
-    sudo apt-get update && apt-get install --no-install-recommends -y \
-        libblosc-dev \
-        libboost-iostreams-dev \
-        libboost-system-dev \
-        libboost-system-dev \
-        libeigen3-dev
 
-    # Install OpenVDB from source
-    git clone --depth 1 https://github.com/nachovizzo/openvdb.git -b nacho/vdbfusion
-    cd openvdb
-    mkdir build && cd build
-    cmake  -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DUSE_ZLIB=OFF ..
-    sudo make -j$(nproc) all install
-    cd ../
-    ```
+### OpenVDB
 
-- VDBfusion
-    ```sh
-    git clone --depth 1 https://github.com/PRBonn/vdbfusion.git
-    cd vdbfusion
-    mkdir build && cd build
-    cmake ..
-    make -j$(nproc) all install
-    cd ../
-    ```
-- [ROS Noetic](http://wiki.ros.org/noetic) - Follow the installation instructions [here](http://wiki.ros.org/noetic/Installation/Ubuntu) if not installed already and create a ros workspace as below
-    ```sh
-    mkdir -p vdbfusion_ros_ws/src
-    cd vdbfusion_ros_ws/
-    catkin init
-    echo "source devel/setup.bash" >> ~/.bashrc
-    source ~/.bashrc
-    cd ../
-    ```
+```sh
+# Install OpenVDB dependencies
+sudo apt-get update && apt-get install --no-install-recommends -y \
+    libblosc-dev \
+    libboost-iostreams-dev \
+    libboost-system-dev \
+    libboost-system-dev \
+    libeigen3-dev
 
-- Clone the [vdbfusion_ros](https://github.com/saurabh1002/vdbfusion_ros.git) repository in your ros workspace
-    ```sh
-    cd vdbfusion_ros_ws/src/
-    git clone https://github.com/saurabh1002/vdbfusion_ros.git
-    # Install dependencies
-    sudo ./vdbfusion_ros/install_deps.sh
-    catkin build
-    ```
+# Install OpenVDB from source
+git clone --depth 1 https://github.com/nachovizzo/openvdb.git -b nacho/vdbfusion
+cd openvdb
+mkdir build && cd build
+cmake  -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DUSE_ZLIB=OFF ..
+sudo make -j$(nproc) all install
+cd ../
+```
+
+### VDBfusion
+
+ ```sh
+ git clone --depth 1 https://github.com/PRBonn/vdbfusion.git
+ cd vdbfusion
+ mkdir build && cd build
+ cmake ..
+ make -j$(nproc) all install
+ cd ../
+  ```
+### ROS
+
+For now only [ROS Noetic](http://wiki.ros.org/noetic) is supported. You can create a ROS workspace
+as usual:
+
+ ```sh
+ mkdir -p vdbfusion_ros_ws/src
+ cd vdbfusion_ros_ws/
+ catkin init
+ echo "source devel/setup.bash" >> ~/.bashrc
+ source ~/.bashrc
+ cd ../
+ ```
+
+Then, clone the [vdbfusion_ros](https://github.com/saurabh1002/vdbfusion_ros.git) repository in your
+ros workspace
+
+```sh
+cd vdbfusion_ros_ws/src/
+git clone https://github.com/saurabh1002/vdbfusion_ros.git
+# Install dependencies
+sudo ./vdbfusion_ros/install_deps.sh
+catkin build
+  ```
 
 ## Usage
-#### Configuration
+
+### Configuration
   1. Create a config file compatible with your dataset and desired tsdf integration parameters using this [template configuration](/config/template.yaml)
   2. The PointClouds should be a `sensor_msgs/PointCloud2` message published on a custom topic name which needs to be specified in the config file
   3. The Transforms should be either a `tf2_msgs/TFMessage` or a `geometry_msgs/TransformStamped`. See the [template configuration](config/template.yaml) for more details
   4. The data can be published either through a rosbag file or directly from another ros node
 
-#### Launch
+### Launch
 ```sh
 roslaunch vdbfusion_ros vdbfusion.launch config_file_name:=<insert config file name here> path_to_rosbag_file:=<insert path to rosbag file here>
 ```
 
-#### Save the VDB Grid and Extract Triangle Mesh
+### Save the VDB Grid and Extract Triangle Mesh
 ```sh
 rosservice call /save_vdb_volume "path: '<insert filename and path to save the volume and mesh>'"    
 ```
