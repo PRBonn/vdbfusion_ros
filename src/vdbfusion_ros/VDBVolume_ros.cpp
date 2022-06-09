@@ -1,10 +1,12 @@
 #include "VDBVolume_ros.hpp"
 
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/Transform.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/point_cloud_conversion.h>
+#include <tf/transform_listener.h>
 #include <tf2_msgs/TFMessage.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 
@@ -26,6 +28,14 @@ void pcl2SensorMsgToEigen(const sensor_msgs::PointCloud2& pcl2,
     });
 }
 
+void PreProcessCloud(std::vector<Eigen::Vector3d>& points, float min_range, float max_range) {
+    points.erase(
+        std::remove_if(points.begin(), points.end(), [&](auto p) { return p.norm() > max_range; }),
+        points.end());
+    points.erase(
+        std::remove_if(points.begin(), points.end(), [&](auto p) { return p.norm() < min_range; }),
+        points.end());
+}
 }  // namespace
 
 vdbfusion::VDBVolume vdbfusion::VDBVolumeNode::InitVDBVolume() {
