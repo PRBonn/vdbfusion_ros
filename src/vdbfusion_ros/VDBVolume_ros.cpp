@@ -103,35 +103,29 @@ void vdbfusion::VDBVolumeNode::Integrate(const sensor_msgs::PointCloud2& pcd) {
 bool vdbfusion::VDBVolumeNode::saveVDBVolume(vdbfusion_ros::save_vdb_volume::Request& path,
                                              vdbfusion_ros::save_vdb_volume::Response& response) {
     ROS_INFO("Saving the mesh and VDB grid files ...");
-
     std::string volume_name = path.path;
-
     openvdb::io::File(volume_name + "_grid.vdb").write({vdb_volume_.tsdf_});
 
     // Run marching cubes and save a .ply file
-    {
-        auto [vertices, triangles] =
-            this->vdb_volume_.ExtractTriangleMesh(this->fill_holes_, this->min_weight_);
+    auto [vertices, triangles] =
+        this->vdb_volume_.ExtractTriangleMesh(this->fill_holes_, this->min_weight_);
 
-        Eigen::MatrixXd V(vertices.size(), 3);
-        for (size_t i = 0; i < vertices.size(); i++) {
-            V.row(i) = Eigen::VectorXd::Map(&vertices[i][0], vertices[i].size());
-        }
-
-        Eigen::MatrixXi F(triangles.size(), 3);
-        for (size_t i = 0; i < triangles.size(); i++) {
-            F.row(i) = Eigen::VectorXi::Map(&triangles[i][0], triangles[i].size());
-        }
-        igl::write_triangle_mesh(volume_name + "_mesh.ply", V, F, igl::FileEncoding::Binary);
+    Eigen::MatrixXd V(vertices.size(), 3);
+    for (size_t i = 0; i < vertices.size(); i++) {
+        V.row(i) = Eigen::VectorXd::Map(&vertices[i][0], vertices[i].size());
     }
+
+    Eigen::MatrixXi F(triangles.size(), 3);
+    for (size_t i = 0; i < triangles.size(); i++) {
+        F.row(i) = Eigen::VectorXi::Map(&triangles[i][0], triangles[i].size());
+    }
+    igl::write_triangle_mesh(volume_name + "_mesh.ply", V, F, igl::FileEncoding::Binary);
     ROS_INFO("Done saving the mesh and VDB grid files");
     return true;
 }
 
 int main(int argc, char** argv) {
     ros::init(argc, argv, "vdbfusion_rosnode");
-
     vdbfusion::VDBVolumeNode vdb_volume_node;
-
     ros::spin();
 }
