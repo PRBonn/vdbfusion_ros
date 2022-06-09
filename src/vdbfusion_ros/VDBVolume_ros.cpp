@@ -18,13 +18,15 @@
 #include "openvdb/openvdb.h"
 
 namespace {
-void pcl2SensorMsgToEigen(const sensor_msgs::PointCloud2& pcl2,
-                          std::vector<Eigen::Vector3d>& points) {
+std::vector<Eigen::Vector3d> pcl2SensorMsgToEigen(const sensor_msgs::PointCloud2& pcl2) {
+    std::vector<Eigen::Vector3d> points;
+    points.reserve(pcl2.width);
     sensor_msgs::PointCloud pcl;
     sensor_msgs::convertPointCloud2ToPointCloud(pcl2, pcl);
     std::for_each(pcl.points.begin(), pcl.points.end(), [&](const auto& point) {
         points.emplace_back(Eigen::Vector3d(point.x, point.y, point.z));
     });
+    return points;
 }
 
 void PreProcessCloud(std::vector<Eigen::Vector3d>& points, float min_range, float max_range) {
@@ -77,26 +79,23 @@ vdbfusion::VDBVolumeNode::VDBVolumeNode() : vdb_volume_(InitVDBVolume()), tf_(nh
 }
 
 void vdbfusion::VDBVolumeNode::Integrate(const sensor_msgs::PointCloud2& pcd) {
-    std::vector<Eigen::Vector3d> scan;
     geometry_msgs::TransformStamped transform;
+    sensor_msgs::PointCloud2 pcd_ = pcd;
 
     if (tf_.lookUpTransform(pcd.header.stamp, timestamp_tolerance_, transform)) {
         ROS_INFO("Transform available");
-        Eigen::Vector3d origin =
-            Eigen::Vector3d(transform.transform.translation.x, transform.transform.translation.y,
-                            transform.transform.translation.z);
         if (apply_pose_) {
-            sensor_msgs::PointCloud2 pcd_transformed;
-            tf2::doTransform(pcd, pcd_transformed, transform);
-
-            pcl2SensorMsgToEigen(pcd_transformed, scan);
-        } else {
-            pcl2SensorMsgToEigen(pcd, scan);
+            tf2::doTransform(pcd, pcd_, transform);
         }
+        auto scan = pcl2SensorMsgToEigen(pcd_);
 
         if (preprocess_) {
             PreProcessCloud(scan, min_range_, max_range_);
         }
+        const auto& x = transform.transform.translation.x;
+        const auto& y = transform.transform.translation.y;
+        const auto& z = transform.transform.translation.z;
+        auto origin = Eigen::Vector3d(x, y, z);
         vdb_volume_.Integrate(scan, origin, [](float /*unused*/) { return 1.0; });
     }
 }
