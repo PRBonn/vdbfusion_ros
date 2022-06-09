@@ -26,7 +26,6 @@ catkin_package(
   INCLUDE_DIRS
   ${CMAKE_CURRENT_SOURCE_DIR}/include/vdbfusion_ros/
   LIBRARIES
-  type_conversions
   CATKIN_DEPENDS
   roscpp
   rospy

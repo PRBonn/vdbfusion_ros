@@ -1,7 +1,11 @@
 #include "VDBVolume_ros.hpp"
 
+#include <geometry_msgs/Point.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <ros/ros.h>
+#include <sensor_msgs/PointCloud.h>
+#include <sensor_msgs/point_cloud_conversion.h>
+#include <tf2_msgs/TFMessage.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 
 #include <Eigen/Core>
@@ -10,8 +14,19 @@
 
 #include "igl/write_triangle_mesh.h"
 #include "openvdb/openvdb.h"
-#include "type_conversions.h"
 #include "utils.h"
+
+namespace {
+void pcl2SensorMsgToEigen(const sensor_msgs::PointCloud2& pcl2,
+                          std::vector<Eigen::Vector3d>& points) {
+    sensor_msgs::PointCloud pcl;
+    sensor_msgs::convertPointCloud2ToPointCloud(pcl2, pcl);
+    std::for_each(pcl.points.begin(), pcl.points.end(), [&](const auto& point) {
+        points.emplace_back(Eigen::Vector3d(point.x, point.y, point.z));
+    });
+}
+
+}  // namespace
 
 vdbfusion::VDBVolume vdbfusion::VDBVolumeNode::InitVDBVolume() {
     float voxel_size;
@@ -65,9 +80,9 @@ void vdbfusion::VDBVolumeNode::Integrate(const sensor_msgs::PointCloud2& pcd) {
             sensor_msgs::PointCloud2 pcd_transformed;
             tf2::doTransform(pcd, pcd_transformed, transform);
 
-            typeconvert::pcl2SensorMsgToEigen(pcd_transformed, scan);
+            pcl2SensorMsgToEigen(pcd_transformed, scan);
         } else {
-            typeconvert::pcl2SensorMsgToEigen(pcd, scan);
+            pcl2SensorMsgToEigen(pcd, scan);
         }
 
         if (preprocess_) {
