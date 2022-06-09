@@ -36,10 +36,7 @@ catkin_package(
   sensor_msgs
   message_runtime)
 
-include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/utils #
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/vdbfusion_ros #
-  ${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/vdbfusion_ros)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src)
 

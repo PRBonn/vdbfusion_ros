@@ -13,7 +13,6 @@ target_link_libraries(${PROJECT_NAME}_node PUBLIC
 )
 
 target_include_directories(${PROJECT_NAME}_node PUBLIC
-  ${CMAKE_SOURCE_DIR}/src/utils
   ${CMAKE_SOURCE_DIR}/include/vdbfusion_ros
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}

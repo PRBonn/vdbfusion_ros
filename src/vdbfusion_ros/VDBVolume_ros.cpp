@@ -16,7 +16,6 @@
 
 #include "igl/write_triangle_mesh.h"
 #include "openvdb/openvdb.h"
-#include "utils.h"
 
 namespace {
 void pcl2SensorMsgToEigen(const sensor_msgs::PointCloud2& pcl2,
