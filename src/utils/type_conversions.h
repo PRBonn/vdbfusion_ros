@@ -18,8 +18,4 @@ void pcl2SensorMsgToEigen(const sensor_msgs::PointCloud2 &pcl2,
     });
 }
 
-void tf2ToEigen(const tf2_msgs::TFMessage &tf, Eigen::Vector3d &e) {
-    auto origin = tf.transforms[0].transform.translation;
-    e = Eigen::Vector3d(origin.x, origin.y, origin.z);
-}
 }  // namespace typeconvert
