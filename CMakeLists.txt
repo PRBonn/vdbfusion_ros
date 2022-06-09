@@ -8,11 +8,15 @@ find_package(OpenVDB REQUIRED)
 find_package(VDBFusion REQUIRED)
 
 find_package(
-  catkin REQUIRED COMPONENTS 
-    rospy roscpp
-    tf2_ros tf2_sensor_msgs
-    std_msgs geometry_msgs sensor_msgs
-    message_generation)
+  catkin REQUIRED
+  COMPONENTS rospy
+             roscpp
+             tf2_ros
+             tf2_sensor_msgs
+             std_msgs
+             geometry_msgs
+             sensor_msgs
+             message_generation)
 
 add_service_files(FILES save_vdb_volume.srv)
 
@@ -20,18 +24,22 @@ generate_messages()
 
 catkin_package(
   INCLUDE_DIRS
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vdbfusion_ros/
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/vdbfusion_ros/
   LIBRARIES
-    type_conversions
+  type_conversions
   CATKIN_DEPENDS
-    roscpp rospy
-    tf2_ros tf2_sensor_msgs
-    std_msgs geometry_msgs sensor_msgs
-    message_runtime)
+  roscpp
+  rospy
+  tf2_ros
+  tf2_sensor_msgs
+  std_msgs
+  geometry_msgs
+  sensor_msgs
+  message_runtime)
 
 include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/utils
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/vdbfusion_ros
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/utils #
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/vdbfusion_ros #
   ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src)
