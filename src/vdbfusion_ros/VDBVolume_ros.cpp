@@ -18,23 +18,70 @@
 #include "openvdb/openvdb.h"
 
 namespace {
+
+template <typename PCLPoint>
+inline bool isPointFinite(const PCLPoint& point) {
+  return std::isfinite(point.x) && std::isfinite(point.y) &&
+         std::isfinite(point.z);
+}
+
 std::vector<Eigen::Vector3d> pcl2SensorMsgToEigen(const sensor_msgs::PointCloud2& pcl2) {
     std::vector<Eigen::Vector3d> points;
     points.reserve(pcl2.width);
+    ROS_INFO("** Total of %ld message points.", pcl2.width * pcl2.height);
     sensor_msgs::PointCloud pcl;
     sensor_msgs::convertPointCloud2ToPointCloud(pcl2, pcl);
     std::for_each(pcl.points.begin(), pcl.points.end(), [&](const auto& point) {
-        points.emplace_back(Eigen::Vector3d(point.x, point.y, point.z));
+        if(isPointFinite(point)) {
+            
+        }
     });
     return points;
 }
 
-void PreProcessCloud(std::vector<Eigen::Vector3d>& points, float min_range, float max_range) {
+void pclRrbToVed3i(pcl::PointCloud<pcl::PointXYZRGB>& pcl, std::vector<openvdb::Vec3i>& colors, 
+    std::vector<Eigen::Vector3d>& points) {
+    colors.reserve(pcl.size());
+    points.reserve(pcl.size());
+    ROS_INFO("** Total of %ld RGBD points.", pcl.size());
+    std::for_each(pcl.points.begin(), pcl.points.end(), [&](const auto& point) {
+        if(isPointFinite(point)) {
+            colors.emplace_back(openvdb::Vec3i(point.r, point.g, point.b));
+            points.emplace_back(Eigen::Vector3d(point.x, point.y, point.z));
+        }
+    });
+}
+
+
+/*
+template <>
+inline Color convertColor(const pcl::PointXYZRGB& point) {
+  return Color(point.r, point.g, point.b, point.a);
+}
+
+
+template <typename PCLPoint>
+std::vector<openvdb::Vec3i> convertPointcloud(
+    const typename pcl::PointCloud<PCLPoint>& pointcloud_pcl) {
+  std::vector<openvdb::Vec3i> colors;
+  colors.reserve(pcl.size());
+  for (size_t i = 0; i < pointcloud_pcl.points.size(); ++i) {
+    //if (!isPointFinite(pointcloud_pcl.points[i])) {
+    //  continue;
+    //}
+    colors->emplace_back(
+        convertColor<PCLPoint>(pointcloud_pcl.points[i]));
+  }
+}
+*/
+
+void PreProcessCloud(pcl::PointCloud<pcl::PointXYZRGB>& points, 
+    float min_range, float max_range) {
     points.erase(
-        std::remove_if(points.begin(), points.end(), [&](auto p) { return p.norm() > max_range; }),
+        std::remove_if(points.begin(), points.end(), [&](auto p) { return p.getVector3fMap().norm() > max_range; }),
         points.end());
     points.erase(
-        std::remove_if(points.begin(), points.end(), [&](auto p) { return p.norm() < min_range; }),
+        std::remove_if(points.begin(), points.end(), [&](auto p) { return p.getVector3fMap().norm() < min_range; }),
         points.end());
 }
 }  // namespace
@@ -87,16 +134,26 @@ void vdbfusion::VDBVolumeNode::Integrate(const sensor_msgs::PointCloud2& pcd) {
         if (apply_pose_) {
             tf2::doTransform(pcd, pcd_, transform);
         }
-        auto scan = pcl2SensorMsgToEigen(pcd_);
-
+        //auto scan = pcl2SensorMsgToEigen(pcd_);
+        
+        pcl::PointCloud<pcl::PointXYZRGB> point_cloud;
+        //sensor_msgs::PointCloud2 no_cte_point_cloud_msg = pcd_;
+        pcl::moveFromROSMsg(pcd_, point_cloud);        
         if (preprocess_) {
-            PreProcessCloud(scan, min_range_, max_range_);
+            PreProcessCloud(point_cloud, min_range_, max_range_);            
         }
+
+        std::vector<openvdb::Vec3i> colors;
+        std::vector<Eigen::Vector3d> scan;
+        pclRrbToVed3i(point_cloud, colors, scan);
+
         const auto& x = transform.transform.translation.x;
         const auto& y = transform.transform.translation.y;
         const auto& z = transform.transform.translation.z;
         auto origin = Eigen::Vector3d(x, y, z);
-        vdb_volume_.Integrate(scan, origin, [](float /*unused*/) { return 1.0; });
+
+        //ROS_INFO("Total of %ld , %ld points.", scan.size(), colors.size());
+        vdb_volume_.Integrate(scan, colors, origin, [](float /*unused*/) { return 1.0; });        
     }
 }
 

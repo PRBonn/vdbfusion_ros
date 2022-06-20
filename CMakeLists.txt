@@ -18,7 +18,9 @@ find_package(
              std_msgs
              geometry_msgs
              sensor_msgs
-             message_generation)
+             message_generation
+             pcl_ros 
+             pcl_conversions)
 
 add_service_files(FILES save_vdb_volume.srv)
 
@@ -36,7 +38,9 @@ catkin_package(
   std_msgs
   geometry_msgs
   sensor_msgs
-  message_runtime)
+  message_runtime
+  pcl_ros 
+  pcl_conversions)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/vdbfusion_ros)
 

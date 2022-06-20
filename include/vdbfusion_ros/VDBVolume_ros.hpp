@@ -6,6 +6,7 @@
 #include "Transform.hpp"
 #include "vdbfusion/VDBVolume.h"
 #include "vdbfusion_ros/save_vdb_volume.h"
+#include <pcl_conversions/pcl_conversions.h>
 
 namespace vdbfusion {
 class VDBVolumeNode {
