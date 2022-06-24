@@ -26,21 +26,7 @@ inline bool isPointFinite(const PCLPoint& point) {
          std::isfinite(point.z);
 }
 
-std::vector<Eigen::Vector3d> pcl2SensorMsgToEigen(const sensor_msgs::PointCloud2& pcl2) {
-    std::vector<Eigen::Vector3d> points;
-    points.reserve(pcl2.width);
-    ROS_INFO("** Total of %ld message points.", pcl2.width * pcl2.height);
-    sensor_msgs::PointCloud pcl;
-    sensor_msgs::convertPointCloud2ToPointCloud(pcl2, pcl);
-    std::for_each(pcl.points.begin(), pcl.points.end(), [&](const auto& point) {
-        if(isPointFinite(point)) {
-            
-        }
-    });
-    return points;
-}
-
-void pclRrbToVed3i(pcl::PointCloud<pcl::PointXYZRGB>& pcl, std::vector<openvdb::Vec3i>& colors, 
+void pclRgbToVec3i(pcl::PointCloud<pcl::PointXYZRGB>& pcl, std::vector<openvdb::Vec3i>& colors,
     std::vector<Eigen::Vector3d>& points) {
     colors.reserve(pcl.size());
     points.reserve(pcl.size());
@@ -54,7 +40,7 @@ void pclRrbToVed3i(pcl::PointCloud<pcl::PointXYZRGB>& pcl, std::vector<openvdb::
 }
 
 
-void PreProcessCloud(pcl::PointCloud<pcl::PointXYZRGB>& points, 
+void PreProcessCloud(pcl::PointCloud<pcl::PointXYZRGB>& points,
     float min_range, float max_range) {
     points.erase(
         std::remove_if(points.begin(), points.end(), [&](auto p) { return p.getVector3fMap().norm() > max_range; }),
@@ -113,26 +99,24 @@ void vdbfusion::VDBVolumeNode::Integrate(const sensor_msgs::PointCloud2& pcd) {
         if (apply_pose_) {
             tf2::doTransform(pcd, pcd_, transform);
         }
-        //auto scan = pcl2SensorMsgToEigen(pcd_);
-        
+
         pcl::PointCloud<pcl::PointXYZRGB> point_cloud;
-        //sensor_msgs::PointCloud2 no_cte_point_cloud_msg = pcd_;
-        pcl::moveFromROSMsg(pcd_, point_cloud);        
+        pcl::moveFromROSMsg(pcd_, point_cloud);
         if (preprocess_) {
-            PreProcessCloud(point_cloud, min_range_, max_range_);            
+            PreProcessCloud(point_cloud, min_range_, max_range_);
         }
 
         std::vector<openvdb::Vec3i> colors;
         std::vector<Eigen::Vector3d> scan;
-        pclRrbToVed3i(point_cloud, colors, scan);
+        pclRgbToVec3i(point_cloud, colors, scan);
 
         const auto& x = transform.transform.translation.x;
         const auto& y = transform.transform.translation.y;
         const auto& z = transform.transform.translation.z;
         auto origin = Eigen::Vector3d(x, y, z);
 
-        //ROS_INFO("Total of %ld , %ld points.", scan.size(), colors.size());
-        vdb_volume_.Integrate(scan, colors, origin, [](float /*unused*/) { return 1.0; });        
+        ROS_INFO("Total of %ld , %ld points.", scan.size(), colors.size());
+        vdb_volume_.Integrate(scan, colors, origin, [](float /*unused*/) { return 1.0; });
     }
 }
 
@@ -150,7 +134,7 @@ bool vdbfusion::VDBVolumeNode::saveVDBVolume(vdbfusion_ros::save_vdb_volume::Req
     // Suppose these hold your data
     std::vector<std::array<double, 3>> meshVertexPositions;
     for (size_t i = 0; i < vertices.size(); i++) {
-        std::array<double, 3> vertex = {vertices[i][0], vertices[i][1], vertices[i][2]}; 
+        std::array<double, 3> vertex = {vertices[i][0], vertices[i][1], vertices[i][2]};
         meshVertexPositions.emplace_back(vertex);
     }
 
