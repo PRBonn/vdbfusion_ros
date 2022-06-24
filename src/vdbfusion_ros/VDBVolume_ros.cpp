@@ -11,10 +11,11 @@
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 
 #include <Eigen/Core>
+#include <happly.h>
 #include <iostream>
 #include <vector>
+#include <array>
 
-#include "igl/write_triangle_mesh.h"
 #include "openvdb/openvdb.h"
 
 namespace {
@@ -52,28 +53,6 @@ void pclRrbToVed3i(pcl::PointCloud<pcl::PointXYZRGB>& pcl, std::vector<openvdb::
     });
 }
 
-
-/*
-template <>
-inline Color convertColor(const pcl::PointXYZRGB& point) {
-  return Color(point.r, point.g, point.b, point.a);
-}
-
-
-template <typename PCLPoint>
-std::vector<openvdb::Vec3i> convertPointcloud(
-    const typename pcl::PointCloud<PCLPoint>& pointcloud_pcl) {
-  std::vector<openvdb::Vec3i> colors;
-  colors.reserve(pcl.size());
-  for (size_t i = 0; i < pointcloud_pcl.points.size(); ++i) {
-    //if (!isPointFinite(pointcloud_pcl.points[i])) {
-    //  continue;
-    //}
-    colors->emplace_back(
-        convertColor<PCLPoint>(pointcloud_pcl.points[i]));
-  }
-}
-*/
 
 void PreProcessCloud(pcl::PointCloud<pcl::PointXYZRGB>& points, 
     float min_range, float max_range) {
@@ -164,19 +143,41 @@ bool vdbfusion::VDBVolumeNode::saveVDBVolume(vdbfusion_ros::save_vdb_volume::Req
     openvdb::io::File(volume_name + "_grid.vdb").write({vdb_volume_.tsdf_});
 
     // Run marching cubes and save a .ply file
-    auto [vertices, triangles] =
+    auto [vertices, triangles, colors] =
         this->vdb_volume_.ExtractTriangleMesh(this->fill_holes_, this->min_weight_);
 
-    Eigen::MatrixXd V(vertices.size(), 3);
+
+    // Suppose these hold your data
+    std::vector<std::array<double, 3>> meshVertexPositions;
     for (size_t i = 0; i < vertices.size(); i++) {
-        V.row(i) = Eigen::VectorXd::Map(&vertices[i][0], vertices[i].size());
+        std::array<double, 3> vertex = {vertices[i][0], vertices[i][1], vertices[i][2]}; 
+        meshVertexPositions.emplace_back(vertex);
     }
 
-    Eigen::MatrixXi F(triangles.size(), 3);
+    std::vector<std::vector<size_t>> meshFaceIndices;
     for (size_t i = 0; i < triangles.size(); i++) {
-        F.row(i) = Eigen::VectorXi::Map(&triangles[i][0], triangles[i].size());
+        std::vector<size_t> triangle = {triangles[i][0], triangles[i][1], triangles[i][2]};
+        meshFaceIndices.emplace_back(triangle);
     }
-    igl::write_triangle_mesh(volume_name + "_mesh.ply", V, F, igl::FileEncoding::Binary);
+
+    std::vector<std::array<double, 3>> meshVertexColors;
+    for (size_t i = 0; i < colors.size(); i++) {
+        std::array<double, 3> triangle = {colors[i][0], colors[i][1], colors[i][2]};
+        meshVertexColors.emplace_back(triangle);
+    }
+
+    // Create an empty object
+    happly::PLYData plyOut;
+
+    // Add mesh data (elements are created automatically)
+    plyOut.addVertexPositions(meshVertexPositions);
+    plyOut.addVertexColors(meshVertexColors);
+    plyOut.addFaceIndices(meshFaceIndices);
+
+
+    // Write the object to file
+    plyOut.write(volume_name + "_mesh.ply", happly::DataFormat::ASCII);
+
     ROS_INFO("Done saving the mesh and VDB grid files");
     return true;
 }

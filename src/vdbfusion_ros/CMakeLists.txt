@@ -8,7 +8,7 @@ target_link_libraries(${PROJECT_NAME}_node PUBLIC
   ${catkin_LIBRARIES}
   VDBFusion::vdbfusion
   Eigen3::Eigen
-  igl::core
+  happly
   transforms
 )
 
