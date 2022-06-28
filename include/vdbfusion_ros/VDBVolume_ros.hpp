@@ -1,12 +1,12 @@
 #pragma once
 
+#include <pcl_conversions/pcl_conversions.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 
 #include "Transform.hpp"
 #include "vdbfusion/VDBVolume.h"
 #include "vdbfusion_ros/save_vdb_volume.h"
-#include <pcl_conversions/pcl_conversions.h>
 
 namespace vdbfusion {
 class VDBVolumeNode {

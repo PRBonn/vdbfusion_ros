@@ -3,6 +3,7 @@
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Transform.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <happly.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/point_cloud_conversion.h>
@@ -11,43 +12,38 @@
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 
 #include <Eigen/Core>
-#include <happly.h>
-#include <iostream>
-#include <vector>
 #include <array>
+#include <iostream>
+#include <tuple>
+#include <vector>
 
 #include "openvdb/openvdb.h"
 
 namespace {
 
-template <typename PCLPoint>
-inline bool isPointFinite(const PCLPoint& point) {
-  return std::isfinite(point.x) && std::isfinite(point.y) &&
-         std::isfinite(point.z);
-}
+typedef std::tuple<std::vector<openvdb::Vec3i>, std::vector<Eigen::Vector3d>> ColorsAndPoints;
 
-void pclRgbToVec3i(pcl::PointCloud<pcl::PointXYZRGB>& pcl, std::vector<openvdb::Vec3i>& colors,
-    std::vector<Eigen::Vector3d>& points) {
+ColorsAndPoints PointcloudToColorsAndPoints(const pcl::PointCloud<pcl::PointXYZRGB>& pcl) {
+    std::vector<openvdb::Vec3i> colors;
+    std::vector<Eigen::Vector3d> points;
     colors.reserve(pcl.size());
     points.reserve(pcl.size());
-    ROS_INFO("** Total of %ld RGBD points.", pcl.size());
     std::for_each(pcl.points.begin(), pcl.points.end(), [&](const auto& point) {
-        if(isPointFinite(point)) {
+        if (std::isfinite(point.x) && std::isfinite(point.y) && std::isfinite(point.z)) {
             colors.emplace_back(openvdb::Vec3i(point.r, point.g, point.b));
             points.emplace_back(Eigen::Vector3d(point.x, point.y, point.z));
         }
     });
+    return std::forward_as_tuple(colors, points);
 }
 
-
-void PreProcessCloud(pcl::PointCloud<pcl::PointXYZRGB>& points,
-    float min_range, float max_range) {
-    points.erase(
-        std::remove_if(points.begin(), points.end(), [&](auto p) { return p.getVector3fMap().norm() > max_range; }),
-        points.end());
-    points.erase(
-        std::remove_if(points.begin(), points.end(), [&](auto p) { return p.getVector3fMap().norm() < min_range; }),
-        points.end());
+void PreProcessCloud(pcl::PointCloud<pcl::PointXYZRGB>& points, float min_range, float max_range) {
+    points.erase(std::remove_if(points.begin(), points.end(),
+                                [&](auto p) { return p.getVector3fMap().norm() > max_range; }),
+                 points.end());
+    points.erase(std::remove_if(points.begin(), points.end(),
+                                [&](auto p) { return p.getVector3fMap().norm() < min_range; }),
+                 points.end());
 }
 }  // namespace
 
@@ -106,17 +102,14 @@ void vdbfusion::VDBVolumeNode::Integrate(const sensor_msgs::PointCloud2& pcd) {
             PreProcessCloud(point_cloud, min_range_, max_range_);
         }
 
-        std::vector<openvdb::Vec3i> colors;
-        std::vector<Eigen::Vector3d> scan;
-        pclRgbToVec3i(point_cloud, colors, scan);
+        auto [colors, points] = PointcloudToColorsAndPoints(point_cloud);
 
         const auto& x = transform.transform.translation.x;
         const auto& y = transform.transform.translation.y;
         const auto& z = transform.transform.translation.z;
         auto origin = Eigen::Vector3d(x, y, z);
 
-        ROS_INFO("Total of %ld , %ld points.", scan.size(), colors.size());
-        vdb_volume_.Integrate(scan, colors, origin, [](float /*unused*/) { return 1.0; });
+        vdb_volume_.Integrate(points, colors, origin, [](float /*unused*/) { return 1.0; });
     }
 }
 
@@ -130,7 +123,6 @@ bool vdbfusion::VDBVolumeNode::saveVDBVolume(vdbfusion_ros::save_vdb_volume::Req
     auto [vertices, triangles, colors] =
         this->vdb_volume_.ExtractTriangleMesh(this->fill_holes_, this->min_weight_);
 
-
     // Suppose these hold your data
     std::vector<std::array<double, 3>> meshVertexPositions;
     for (size_t i = 0; i < vertices.size(); i++) {
@@ -140,7 +132,9 @@ bool vdbfusion::VDBVolumeNode::saveVDBVolume(vdbfusion_ros::save_vdb_volume::Req
 
     std::vector<std::vector<size_t>> meshFaceIndices;
     for (size_t i = 0; i < triangles.size(); i++) {
-        std::vector<size_t> triangle = {triangles[i][0], triangles[i][1], triangles[i][2]};
+        std::vector<size_t> triangle = {static_cast<size_t>(triangles[i][0]),
+                                        static_cast<size_t>(triangles[i][1]),
+                                        static_cast<size_t>(triangles[i][2])};
         meshFaceIndices.emplace_back(triangle);
     }
 
@@ -158,11 +152,11 @@ bool vdbfusion::VDBVolumeNode::saveVDBVolume(vdbfusion_ros::save_vdb_volume::Req
     plyOut.addVertexColors(meshVertexColors);
     plyOut.addFaceIndices(meshFaceIndices);
 
-
     // Write the object to file
-    plyOut.write(volume_name + "_mesh.ply", happly::DataFormat::ASCII);
+    std::string filename = volume_name + "_mesh.ply";
+    plyOut.write(filename, happly::DataFormat::Binary);
 
-    ROS_INFO("Done saving the mesh and VDB grid files");
+    ROS_INFO("Done saving the mesh and VDB grid files in file %s", filename.c_str());
     return true;
 }
 
