@@ -34,7 +34,7 @@ ColorsAndPoints PointcloudToColorsAndPoints(const pcl::PointCloud<pcl::PointXYZR
             points.emplace_back(Eigen::Vector3d(point.x, point.y, point.z));
         }
     });
-    return std::forward_as_tuple(colors, points);
+    return std::forward_as_tuple(std::move(colors), std::move(points));
 }
 
 void PreProcessCloud(pcl::PointCloud<pcl::PointXYZRGB>& points, float min_range, float max_range) {
